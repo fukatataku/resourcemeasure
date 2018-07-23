@@ -8,7 +8,8 @@ from datetime import datetime
 import time
 from contextlib import contextmanager
 from subprocess import Popen
-from signal import SIGUSR1
+from signal import SIGTERM
+import functools
 
 HERE = os.path.dirname(__file__)
 
@@ -44,8 +45,9 @@ class ResourceMeasure(object):
         self.outdir = outdir
         self.iostat_filepath = os.path.join(self.outdir, "iostat.txt")
         self.vmstat_filepath = os.path.join(self.outdir, "vmstat.txt")
+        self.ndstat_filepath = os.path.join(self.outdir, "ndstat.txt")
         self.free_filepath = os.path.join(self.outdir, "free.txt")
-        self.process_filepath = os.path.join(self.outdir, "process.txt")
+        self.ps_filepath = os.path.join(self.outdir, "ps.txt")
         self.section_filepath = os.path.join(self.outdir, "section.tsv")
         self.sections = []                  # 測定区間ごとに(タイトル, 開始時刻, 終了時刻)を入れる
         self.measure_start = time.time()    # 測定開始時間
@@ -59,10 +61,24 @@ class ResourceMeasure(object):
         start = datetime.now()
         yield
         end = datetime.now()
-        self.sections.append((title, start, end))
+        seconds = (end - start).total_seconds()
+        self.sections.append((title, start, end, seconds))
+
+    def recmethod(self):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                start = datetime.now()
+                ret = func(*args, **kwargs)
+                end = datetime.now()
+                seconds = (end - start).total_seconds()
+                self.sections.append((title, start, end, seconds))
+                return ret
+            return wrapper
+        return decorator
 
     def finish(self):
-        self.proc.send_signal(SIGUSR1)
+        self.proc.send_signal(SIGTERM)
         self.output_section_file()
 
     def __del__(self):
@@ -71,14 +87,8 @@ class ResourceMeasure(object):
     def output_section_file(self):
         tform = "%Y/%m/%d %H:%M:%S"
         with open(self.section_filepath, "w") as fout:
-            for title, start, end in self.sections:
-                print("\t".join([title, start.strftime(tform), end.strftime(tform)]), file=fout)
-
-    def output_table_files(self):
-        pass
-
-    def output_graphs(self):
-        pass
+            for title, start, end, seconds in self.sections:
+                print("\t".join([title, start.strftime(tform), end.strftime(tform), str(seconds)]), file=fout)
 
 
 if __name__ == "__main__":

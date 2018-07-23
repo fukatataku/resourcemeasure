@@ -103,9 +103,9 @@ finalize() {
     echo "finalize" >&2
     kill $IOSTAT_PID
     kill $VMSTAT_PID
-    # kill $NDSTAT_PID
-    # kill $FREE_PID
-    # kill $PS_PID
+    kill $NDSTAT_PID
+    kill $FREE_PID
+    kill $PS_PID
     FINISH_FLAG=1
 }
 
