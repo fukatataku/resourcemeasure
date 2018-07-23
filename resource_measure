@@ -53,12 +53,13 @@ mon_free() {
 }
 
 mon_ps() {
-    interval=$1
-    target=$2
+    pid=$1
+    interval=$2
     while :
     do
         echo `date +'%Y/%m/%d %H:%M:%S'`
-        ps aux | grep "$target"
+        ps uh -p $pid
+        ps uh --ppid=$pid
         echo
         sleep $interval
     done
@@ -69,27 +70,32 @@ mon_ps() {
 echo -n >$IOSTAT_FILE
 iostat -tyx $INTERVAL >>$IOSTAT_FILE &
 IOSTAT_PID=$!
+echo "iostat: $IOSTAT_PID"
 
 # vmstat
 # TODO: 終了時に"Terminated ..."と出力されてしまい、見苦しい
 echo -n >$VMSTAT_FILE
 vmstat -nt $INTERVAL >>$VMSTAT_FILE &
 VMSTAT_PID=$!
+echo "vmstat: $VMSTAT_PID"
 
 # ndstat
 echo -n >$NDSTAT_FILE
 ndstat $INTERVAL >>$NDSTAT_FILE &
 NDSTAT_PID=$!
+echo "ndstat: $NDSTAT_PID"
 
 # free
 echo -n >$FREE_FILE
 mon_free $INTERVAL >>$FREE_FILE &
 FREE_PID=$!
+echo "free: $FREE_PID"
 
 # ps info
 echo -n >$PS_FILE
-mon_ps $INTERVAL "postgres" >>$PS_FILE &
+mon_ps $PID $INTERVAL >>$PS_FILE &
 PS_PID=$!
+echo "ps: $PS_PID"
 
 FINISH_FLAG=0
 
@@ -97,7 +103,9 @@ finalize() {
     echo "finalize" >&2
     kill $IOSTAT_PID
     kill $VMSTAT_PID
-    kill $NDSTAT_PID
+    # kill $NDSTAT_PID
+    # kill $FREE_PID
+    # kill $PS_PID
     FINISH_FLAG=1
 }
 
