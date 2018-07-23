@@ -1,0 +1,156 @@
+#!/bin/bash
+# coding:utf-8
+
+#================================================================================
+# 以下を出力する
+# ・経過時間 (ミリ秒)
+# ・プロセスCPU使用率
+#   + 親プロセス
+#   + 親子合計
+#   + 子プロセス毎
+# ・プロセスメモリ使用量
+#   + 親プロセス
+#   + 親子合計
+#   + 子プロセス毎
+# ・free
+# ・iostat
+# ・vmstat
+#================================================================================
+
+USAGE="USAGE: $0 [PID] [INTERVAL] [OUTDIR]"
+
+PID=$1
+INTERVAL=${2:-1}
+PROF_DIR=${3:-profile}
+
+mkdir -p $PROF_DIR
+
+IOSTAT_FILE=$PROF_DIR/iostat.txt
+VMSTAT_FILE=$PROF_DIR/vmstat.txt
+NDSTAT_FILE=$PROF_DIR/ndstat.txt
+FREE_FILE=$PROF_DIR/free.txt
+PS_FILE=$PROF_DIR/ps.txt
+
+ndstat() {
+    interval=$1
+    while :
+    do
+        echo `date +'%Y/%m/%d %H:%M:%S'`
+        cat /proc/net/dev
+        echo
+        sleep $interval
+    done
+}
+
+mon_free() {
+    interval=$1
+    while :
+    do
+        echo `date +'%Y/%m/%d %H:%M:%S'`
+        free
+        echo
+        sleep $interval
+    done
+}
+
+mon_ps() {
+    interval=$1
+    target=$2
+    while :
+    do
+        echo `date +'%Y/%m/%d %H:%M:%S'`
+        ps aux | grep "$target"
+        echo
+        sleep $interval
+    done
+}
+
+# iostat
+# TODO: 終了時に"Terminated ..."と出力されてしまい、見苦しい
+echo -n >$IOSTAT_FILE
+iostat -tyx $INTERVAL >>$IOSTAT_FILE &
+IOSTAT_PID=$!
+
+# vmstat
+# TODO: 終了時に"Terminated ..."と出力されてしまい、見苦しい
+echo -n >$VMSTAT_FILE
+vmstat -nt $INTERVAL >>$VMSTAT_FILE &
+VMSTAT_PID=$!
+
+# ndstat
+echo -n >$NDSTAT_FILE
+ndstat $INTERVAL >>$NDSTAT_FILE &
+NDSTAT_PID=$!
+
+# free
+echo -n >$FREE_FILE
+mon_free $INTERVAL >>$FREE_FILE &
+FREE_PID=$!
+
+# ps info
+echo -n >$PS_FILE
+mon_ps $INTERVAL "postgres" >>$PS_FILE &
+PS_PID=$!
+
+FINISH_FLAG=0
+
+finalize() {
+    echo "finalize" >&2
+    kill $IOSTAT_PID
+    kill $VMSTAT_PID
+    kill $NDSTAT_PID
+    FINISH_FLAG=1
+}
+
+trap finalize USR1 TERM INT
+
+# read START_TIME dummy < /proc/uptime
+# START_TIME=${START_TIME/./}0
+
+echo "PID: $$" >&2
+# echo "now	elapsed	parent_cpu	total_cpu	child_cpus	parent_mem	total_mem	child_mems" >>$PROC_FILE
+
+# while [ `ps -p $PID >/dev/null 2>&1; echo $?` == 0 ]
+while :
+do
+#     # free
+#     date +'%Y/%m/%d %H:%M:%S' >>$FREE_FILE
+#     free >>$FREE_FILE
+# 
+#     if [ "$PID" != "" ]; then
+#         # 時刻
+#         now=`date +'%Y/%m/%d %H:%M:%S'`
+# 
+#         # 経過時間 (ミリ秒)
+#         read now_time dummy < /proc/uptime
+#         let elapsed=${now_time/./}0-$START_TIME
+# 
+#         # プロセスのCPU使用率 (親)
+#         parent_cpu=`ps -o %cpu= -p $PID | tr -d "[:space:]"`
+# 
+#         # プロセスのCPU使用率 (親子合計)
+#         child_cpu_eq=$(echo "`ps -o %cpu= --ppid=$PID | xargs` 0.0" | sed -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$//" | sed -e "s/ \+/ + /g")
+#         total_cpu=`echo "slace=2; $parent_cpu + $child_cpu_eq" | bc | sed -e "s/^\./0\./"`
+# 
+#         # TODO プロセスのCPU使用率 (子プロセス毎)
+#         child_cpus=""
+# 
+#         # プロセスメモリ使用量 (親)
+#         parent_mem=`ps -o rss= -p $PID | tr -d "[:space:]"`
+# 
+#         # プロセスメモリ使用量 (親子合計)
+#         child_mem_eq=$(echo "`ps -o rss= --ppid=$PID | xargs` 0" | sed -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$//" | sed -e "s/ \+/ + /g")
+#         total_mem=`echo "$parent_mem + $child_mem_eq" | bc | sed -e "s/^\./0\./"`
+# 
+#         # TODO プロセスメモリ使用量 (子プロセス毎)
+#         child_mems=""
+# 
+#         echo "$now	$elapsed	$parent_cpu	$total_cpu	$child_cpus	$parent_mem	$total_mem	$child_mems" >>$PROC_FILE
+#     fi
+
+    if [ $FINISH_FLAG -eq 1 ]; then
+        break
+    fi
+
+    sleep $INTERVAL
+done
