@@ -24,7 +24,6 @@ INTERVAL=${2:-1}
 PROF_DIR=${3:-profile}
 
 mkdir -p $PROF_DIR
-
 IOSTAT_FILE=$PROF_DIR/iostat.txt
 VMSTAT_FILE=$PROF_DIR/vmstat.txt
 NDSTAT_FILE=$PROF_DIR/ndstat.txt
@@ -104,50 +103,8 @@ finalize() {
 
 trap finalize USR1 TERM INT
 
-# read START_TIME dummy < /proc/uptime
-# START_TIME=${START_TIME/./}0
-
-echo "PID: $$" >&2
-# echo "now	elapsed	parent_cpu	total_cpu	child_cpus	parent_mem	total_mem	child_mems" >>$PROC_FILE
-
-# while [ `ps -p $PID >/dev/null 2>&1; echo $?` == 0 ]
 while :
 do
-#     # free
-#     date +'%Y/%m/%d %H:%M:%S' >>$FREE_FILE
-#     free >>$FREE_FILE
-# 
-#     if [ "$PID" != "" ]; then
-#         # 時刻
-#         now=`date +'%Y/%m/%d %H:%M:%S'`
-# 
-#         # 経過時間 (ミリ秒)
-#         read now_time dummy < /proc/uptime
-#         let elapsed=${now_time/./}0-$START_TIME
-# 
-#         # プロセスのCPU使用率 (親)
-#         parent_cpu=`ps -o %cpu= -p $PID | tr -d "[:space:]"`
-# 
-#         # プロセスのCPU使用率 (親子合計)
-#         child_cpu_eq=$(echo "`ps -o %cpu= --ppid=$PID | xargs` 0.0" | sed -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$//" | sed -e "s/ \+/ + /g")
-#         total_cpu=`echo "slace=2; $parent_cpu + $child_cpu_eq" | bc | sed -e "s/^\./0\./"`
-# 
-#         # TODO プロセスのCPU使用率 (子プロセス毎)
-#         child_cpus=""
-# 
-#         # プロセスメモリ使用量 (親)
-#         parent_mem=`ps -o rss= -p $PID | tr -d "[:space:]"`
-# 
-#         # プロセスメモリ使用量 (親子合計)
-#         child_mem_eq=$(echo "`ps -o rss= --ppid=$PID | xargs` 0" | sed -e "s/^[[:space:]]*//" -e "s/[[:space:]]*$//" | sed -e "s/ \+/ + /g")
-#         total_mem=`echo "$parent_mem + $child_mem_eq" | bc | sed -e "s/^\./0\./"`
-# 
-#         # TODO プロセスメモリ使用量 (子プロセス毎)
-#         child_mems=""
-# 
-#         echo "$now	$elapsed	$parent_cpu	$total_cpu	$child_cpus	$parent_mem	$total_mem	$child_mems" >>$PROC_FILE
-#     fi
-
     if [ $FINISH_FLAG -eq 1 ]; then
         break
     fi
