@@ -8,7 +8,6 @@ from datetime import datetime
 import time
 from contextlib import contextmanager
 from subprocess import Popen
-from signal import SIGTERM
 import functools
 
 HERE = os.path.dirname(__file__)
@@ -24,7 +23,7 @@ class ResourceMeasure(object):
 
     _instance = None
     _interval = 5
-    _outdir = os.path.join(HERE, "resm_result/{}".format(datetime.now().strftime("%Y%m%d.%H%M%S")))
+    _outdir = os.path.join(HERE, "measure_result/{}".format(datetime.now().strftime("%Y%m%d.%H%M%S")))
 
     @classmethod
     def get_instance(cls):
@@ -78,8 +77,9 @@ class ResourceMeasure(object):
         return decorator
 
     def finish(self):
-        self.proc.send_signal(SIGTERM)
+        self.proc.terminate()
         self.output_section_file()
+        self.proc.wait()
 
     def __del__(self):
         self.finish()
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             if (time.time() - start) >= t:
                 break
 
-    ResourceMeasure.config(interval=1, outdir="./resm_result")
+    ResourceMeasure.config(interval=1, outdir="./measure_result")
     resm = ResourceMeasure.get_instance()
 
     with resm.rec("do something"):

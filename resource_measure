@@ -14,7 +14,7 @@ USAGE="USAGE: $0 [PID] [INTERVAL] [OUTDIR]"
 
 PID=$1
 INTERVAL=${2:-1}
-PROF_DIR=${3:-resm_result}
+PROF_DIR=${3:-measure_result}
 
 mkdir -p $PROF_DIR
 IOSTAT_FILE=$PROF_DIR/iostat.txt
