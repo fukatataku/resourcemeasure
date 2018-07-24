@@ -63,7 +63,7 @@ class ResourceMeasure(object):
         seconds = (end - start).total_seconds()
         self.sections.append((title, start, end, seconds))
 
-    def measuremethod(self, title=None):
+    def measured(self, title=None):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         for proc in proc_list:
             proc.join()
 
-    @resm.measuremethod()
+    @resm.measured()
     def do_something2(t):
         start = time.time()
         while True:
