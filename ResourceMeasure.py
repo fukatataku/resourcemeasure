@@ -56,14 +56,14 @@ class ResourceMeasure(object):
         time.sleep(1)
 
     @contextmanager
-    def rec(self, title):
+    def measure(self, title):
         start = datetime.now()
         yield
         end = datetime.now()
         seconds = (end - start).total_seconds()
         self.sections.append((title, start, end, seconds))
 
-    def recmethod(self):
+    def measuremethod(self, title=None):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
@@ -71,7 +71,7 @@ class ResourceMeasure(object):
                 ret = func(*args, **kwargs)
                 end = datetime.now()
                 seconds = (end - start).total_seconds()
-                self.sections.append((title, start, end, seconds))
+                self.sections.append((func.func_name if title is None else title, start, end, seconds))
                 return ret
             return wrapper
         return decorator
@@ -110,17 +110,34 @@ if __name__ == "__main__":
     ResourceMeasure.config(interval=1, outdir="./measure_result")
     resm = ResourceMeasure.get_instance()
 
-    with resm.rec("do something"):
-        do_something(15)
+    with resm.measure("do something"):
+        do_something(5)
 
-    with resm.rec("create process list"):
-        proc_list = [mp.Process(target=do_something, args=(10, )) for _ in range(2)]
+    with resm.measure("create process list"):
+        proc_list = [mp.Process(target=do_something, args=(5, )) for _ in range(2)]
 
-    with resm.rec("execute processes"):
+    with resm.measure("execute processes"):
         for proc in proc_list:
             proc.start()
 
         for proc in proc_list:
             proc.join()
+
+    @resm.measuremethod()
+    def do_something2(t):
+        start = time.time()
+        while True:
+            li = list(range(1014 * 1024))
+            total = 0
+            for v in li:
+                total += v
+
+            # 指定秒数が経過したら終了
+            if (time.time() - start) >= t:
+                break
+
+    do_something2(1)
+    do_something2(2)
+    do_something2(3)
 
     resm.finish()
