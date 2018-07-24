@@ -66,14 +66,12 @@ mon_ps() {
 }
 
 # iostat
-# TODO: 終了時に"Terminated ..."と出力されてしまい、見苦しい
 echo -n >$IOSTAT_FILE
 iostat -tyx $INTERVAL >>$IOSTAT_FILE &
 IOSTAT_PID=$!
 echo "iostat: $IOSTAT_PID"
 
 # vmstat
-# TODO: 終了時に"Terminated ..."と出力されてしまい、見苦しい
 echo -n >$VMSTAT_FILE
 vmstat -nt $INTERVAL >>$VMSTAT_FILE &
 VMSTAT_PID=$!
@@ -99,13 +97,20 @@ echo "ps: $PS_PID"
 
 FINISH_FLAG=0
 
+kill_if_alive() {
+    pid=$1
+    if [ `ps -p $pid >/dev/null 2>&1; echo $?` -eq 0 ]; then
+        kill $pid
+    fi
+}
+
 finalize() {
     echo "finalize" >&2
-    kill $IOSTAT_PID
-    kill $VMSTAT_PID
-    kill $NDSTAT_PID
-    kill $FREE_PID
-    kill $PS_PID
+    kill_if_alive $IOSTAT_PID
+    kill_if_alive $VMSTAT_PID
+    kill_if_alive $NDSTAT_PID
+    kill_if_alive $FREE_PID
+    kill_if_alive $PS_PID
     FINISH_FLAG=1
 }
 
