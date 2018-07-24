@@ -107,7 +107,7 @@ if __name__ == "__main__":
             if (time.time() - start) >= t:
                 break
 
-    ResourceMeasure.config(interval=1)
+    ResourceMeasure.config(interval=1, outdir="./profile")
     resm = ResourceMeasure.get_instance()
 
     with resm.rec("do something"):
