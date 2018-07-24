@@ -24,7 +24,7 @@ class ResourceMeasure(object):
 
     _instance = None
     _interval = 5
-    _outdir = os.path.join(HERE, "profile/{}".format(datetime.now().strftime("%Y%m%d.%H%M%S")))
+    _outdir = os.path.join(HERE, "resm_result/{}".format(datetime.now().strftime("%Y%m%d.%H%M%S")))
 
     @classmethod
     def get_instance(cls):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             if (time.time() - start) >= t:
                 break
 
-    ResourceMeasure.config(interval=1, outdir="./profile")
+    ResourceMeasure.config(interval=1, outdir="./resm_result")
     resm = ResourceMeasure.get_instance()
 
     with resm.rec("do something"):
