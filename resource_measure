@@ -78,31 +78,26 @@ mon_ps() {
 echo -n >$IOSTAT_FILE
 iostat -tyx $INTERVAL >>$IOSTAT_FILE &
 IOSTAT_PID=$!
-echo "iostat: $IOSTAT_PID"
 
 # vmstat
 echo -n >$VMSTAT_FILE
 vmstat -nt $INTERVAL >>$VMSTAT_FILE &
 VMSTAT_PID=$!
-echo "vmstat: $VMSTAT_PID"
 
 # ndstat
 echo -n >$NDSTAT_FILE
 ndstat $INTERVAL >>$NDSTAT_FILE &
 NDSTAT_PID=$!
-echo "ndstat: $NDSTAT_PID"
 
 # free
 echo -n >$FREE_FILE
 mon_free $INTERVAL >>$FREE_FILE &
 FREE_PID=$!
-echo "free: $FREE_PID"
 
 # ps info
 echo -n >$PS_FILE
 mon_ps $PID $INTERVAL >>$PS_FILE &
 PS_PID=$!
-echo "ps: $PS_PID"
 
 FINISH_FLAG=0
 
@@ -114,7 +109,6 @@ kill_if_alive() {
 }
 
 kill_procs() {
-    echo "finalize" >&2
     kill_if_alive $IOSTAT_PID
     kill_if_alive $VMSTAT_PID
     kill_if_alive $NDSTAT_PID
