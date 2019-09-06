@@ -97,7 +97,7 @@ class ResourceMeasure(object):
                 ret = func(*args, **kwargs)
                 end = datetime.now()
                 seconds = (end - start).total_seconds()
-                self.sections.append((func.func_name if title is None else title, start, end, seconds))
+                self.sections.append((func.__name__ if title is None else title, start, end, seconds))
                 return ret
             return wrapper
         return decorator
@@ -114,9 +114,6 @@ class ResourceMeasure(object):
         # 測定スクリプト停止
         self.proc.terminate()
         self.proc.wait()
-
-    def __del__(self):
-        self.finish()
 
     def output_section_file(self):
         """ 区間ごとの処理時間集計ファイルを出力する """
